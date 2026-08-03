@@ -37,7 +37,7 @@ A one-month Summer Internship at **Tata Steel — Steel Networking & Training In
 
 ## // project 1 — secure static website hosting
 
-<img src="./diagrams/01-secure-static-hosting.jpeg" alt="Secure Static Website Hosting Architecture" width="100%">
+<img src="./diagrams/Minor-project1.png" alt="Secure Static Website Hosting Architecture" width="100%">
 
 A private-origin static site: S3 storage locked behind **Origin Access Control (OAC)**, fronted by CloudFront for global edge caching, resolved via Route 53. Zero direct public access to the bucket — every request is signed and validated against the CloudFront distribution ARN.
 
@@ -59,7 +59,7 @@ A private-origin static site: S3 storage locked behind **Origin Access Control (
 
 ## // project 2 — automated text-to-audio converter
 
-<img src="./diagrams/02-text-to-audio-converter.jpeg" alt="Text to Audio Converter Architecture" width="100%">
+<img src="./diagrams/Minor-project2.png" alt="Text to Audio Converter Architecture" width="100%">
 
 An event-driven pipeline: upload a `.txt` file to S3, and a Lambda function automatically converts it to speech via **Amazon Polly's neural voice engine**, storing the resulting MP3 back in S3 for download.
 
@@ -85,7 +85,7 @@ An event-driven pipeline: upload a `.txt` file to S3, and a Lambda function auto
 
 ## // project 3 — upload notifier (event-driven alerts)
 
-<img src="./diagrams/03-upload-notifier.jpeg" alt="Upload Notifier Architecture" width="100%">
+<img src="./diagrams/Minor-project3.png" alt="Upload Notifier Architecture" width="100%">
 
 A zero-latency notification system: any file uploaded to a monitored S3 bucket instantly triggers a formatted email alert via SNS — eliminating manual upload monitoring entirely.
 
@@ -110,7 +110,7 @@ A zero-latency notification system: any file uploaded to a monitored S3 bucket i
 
 ## // project 4 — SPARK personal AI assistant (major project)
 
-<img src="./diagrams/04-spark-ai-assistant.png" alt="SPARK AI Assistant Architecture" width="100%">
+<img src="./diagrams/Major-project.png" alt="SPARK AI Assistant Architecture" width="100%">
 
 The capstone project — a conversational AI assistant bridging natural language with real AWS operations. Built on **Amazon Lex V2** for dialogue management, with a central Lambda router dispatching to S3, CloudWatch, DynamoDB, and SNS based on detected intent.
 
@@ -170,4 +170,4 @@ Summer Internship @ Tata Steel, SNTI Jamshedpur · Mentor: Prem Chand Kodem
 
 [Portfolio](https://polikey-bhuvan.onrender.com) · [LinkedIn](https://linkedin.com/in/polikeybhuvan) · [GitHub](https://github.com/polikeybhuvan)
 
-</div>
+</div>4
