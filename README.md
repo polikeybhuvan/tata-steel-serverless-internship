@@ -1,173 +1,246 @@
 <div align="center">
 
-# ⚡ Event-Driven Programs Using Serverless Architecture in Cloud
-### Summer Internship — Tata Steel, SNTI Jamshedpur (June 2025)
+# ⚡ Serverless Architecture in the Cloud
 
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazon-aws&logoColor=white)
-![Python](https://img.shields.io/badge/Python%203.12-3776AB?style=flat-square&logo=python&logoColor=white)
-![Serverless](https://img.shields.io/badge/Architecture-Serverless-FF9900?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Complete-3fb950?style=flat-square)
+### Tata Steel · Summer Internship · SNTI Jamshedpur · June 2025
 
-📄 **[Read the Full Internship Report](https://drive.google.com/file/d/1hZjngzBuRiI6bFhFzB0viwR1xHfcIrKo/view?usp=sharing)**
+**Four AWS projects exploring secure hosting, event-driven automation, notifications, and conversational cloud operations.**
+
+<p>
+  <img alt="AWS" src="https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazon-aws&logoColor=white">
+  <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="Serverless" src="https://img.shields.io/badge/Architecture-Serverless-FF9900?style=flat-square">
+  <img alt="Projects" src="https://img.shields.io/badge/Projects-4-188038?style=flat-square">
+</p>
+
+[📄 Internship report](https://drive.google.com/file/d/1hZjngzBuRiI6bFhFzB0viwR1xHfcIrKo/view?usp=sharing) · [GitHub repository](https://github.com/polikeybhuvan/tata-steel-serverless-internship) · [Report an issue](https://github.com/polikeybhuvan/tata-steel-serverless-internship/issues/new)
 
 </div>
 
 ---
 
-### // overview
+## Overview
 
-> Four projects. One month. Zero servers managed.
+During my summer internship at **Tata Steel's Steel Networking & Training Institute (SNTI), Jamshedpur**, I explored how AWS managed services can solve practical cloud problems without managing traditional servers.
 
-A one-month Summer Internship at **Tata Steel — Steel Networking & Training Institute (SNTI), Jamshedpur**, under mentor Prem Chand Kodem. The internship progressively built four serverless AWS projects — three minor, one major — culminating in **SPARK**, a conversational AI assistant that executes real cloud operations through natural language.
+The portfolio contains **three focused serverless projects and one capstone, SPARK**. It moves from secure static website delivery, to event-triggered processing and alerts, and finally to a conversational interface for selected AWS operations.
 
-<br>
+> This repository documents internship work and includes example Lambda handlers, an S3 bucket-policy template, and architecture diagrams. It is not a one-click deployment package: AWS resources, event triggers, IAM roles, environment variables, and service permissions must be configured in your own account.
 
-### // project portfolio
+## Project portfolio
 
-| # | Project | Type | AWS Services |
+| # | Project | Main idea | AWS services |
 |---|---|---|---|
-| 1 | Secure Static Website Hosting & Global Content Delivery | Minor | S3 · CloudFront (OAC) · Route 53 |
-| 2 | Automated Text-to-Audio Converter | Minor | S3 · Lambda · Amazon Polly · CloudWatch |
-| 3 | Upload Notifier — Event-Driven Alert System | Minor | S3 · Lambda · Amazon SNS · CloudWatch |
-| 4 | **SPARK Personal AI Assistant** | Major | Lex V2 · Lambda · DynamoDB · SNS · S3 · CloudWatch |
+| 01 | [Secure static website hosting](#1-secure-static-website-hosting) | Serve a private S3 origin through a CDN | S3, CloudFront OAC, Route 53 |
+| 02 | [Text-to-audio converter](#2-event-driven-text-to-audio) | Turn uploaded text into MP3 audio | S3, Lambda, Amazon Polly, CloudWatch |
+| 03 | [Upload notifier](#3-event-driven-upload-notifier) | Notify subscribers when an object is uploaded | S3, Lambda, Amazon SNS, CloudWatch |
+| 04 | [SPARK personal assistant](#4-spark-personal-ai-assistant) | Route conversational intents to selected AWS actions | Amazon Lex V2, Lambda, DynamoDB, SNS, S3, CloudWatch |
 
-<br>
+## Architecture at a glance
 
----
+```mermaid
+flowchart LR
+    User[User / website visitor]
+    DNS[Route 53]
+    CDN[CloudFront + OAC]
+    Site[S3 private website bucket]
+    Input[S3 text upload]
+    Convert[Lambda converter]
+    Polly[Amazon Polly]
+    Audio[S3 output bucket]
+    Upload[S3 object-created event]
+    Notify[Lambda notifier]
+    SNS[Amazon SNS]
+    Email[Email subscriber]
+    Chat[Amazon Lex V2]
+    Router[SPARK router Lambda]
+    Services[S3 · CloudWatch · DynamoDB · SNS]
 
-## // project 1 — secure static website hosting
-
-<img src="./diagrams/Minor-project1.png" alt="Secure Static Website Hosting Architecture" width="100%">
-
-A private-origin static site: S3 storage locked behind **Origin Access Control (OAC)**, fronted by CloudFront for global edge caching, resolved via Route 53. Zero direct public access to the bucket — every request is signed and validated against the CloudFront distribution ARN.
-
-**Request Lifecycle:**
-```
-> user requests URL        → Route 53 resolves to CloudFront
-> edge cache hit?          → YES: serve immediately over HTTPS
-> edge cache miss          → CloudFront signs request via OAC
-> S3 validates SourceArn   → GRANTED: serve + cache | DENIED: Access Denied error
-```
-
-**[View the bucket policy →](./01-bucket-policy.json)**
-
-**Key outcomes:** zero-server overhead · defence-in-depth security via private origin · near-instant global load times · $0/month base cost (pay-as-you-go)
-
-<br>
-
----
-
-## // project 2 — automated text-to-audio converter
-
-<img src="./diagrams/Minor-project2.png" alt="Text to Audio Converter Architecture" width="100%">
-
-An event-driven pipeline: upload a `.txt` file to S3, and a Lambda function automatically converts it to speech via **Amazon Polly's neural voice engine**, storing the resulting MP3 back in S3 for download.
-
-**[View the full Lambda code →](./02-TextToAudioConverter.py)**
-
-**Processing algorithm:**
-```
-> upload .txt to input bucket        → s3:ObjectCreated event fires
-> Lambda parses event, reads text    → via s3.get_object()
-> text < 3,000 chars                 → polly.synthesize_speech() (direct)
-> text > 3,000 chars                 → polly.start_speech_synthesis_task() (async)
-> MP3 written to output bucket       → via s3.put_object()
-> user downloads finished audio file
+    User --> DNS --> CDN --> Site
+    Input --> Convert --> Polly --> Audio
+    Upload --> Notify --> SNS --> Email
+    Chat <--> Router
+    Router --> Services
 ```
 
-**Result:** `Script-1.txt` (25.4 KB) → `Script-1.mp3` (9.9 MB) · Lambda: 1,114ms duration, 97MB/128MB memory
+## 1. Secure static website hosting
 
-**Challenge solved:** Polly's direct synthesis has a character limit — resolved by branching to the async `start_speech_synthesis_task()` API for longer text, identified via CloudWatch log analysis.
+![Secure static website hosting architecture](./diagrams/Minor-project1.png)
 
-<br>
+**Goal:** deliver a static website using CloudFront while keeping the S3 origin private.
 
----
+1. Route 53 resolves the website name to the CloudFront distribution.
+2. CloudFront serves cache hits from edge locations.
+3. On a cache miss, CloudFront accesses S3 using **Origin Access Control (OAC)**.
+4. The bucket policy permits object reads only from the specified CloudFront distribution.
 
-## // project 3 — upload notifier (event-driven alerts)
+The policy template is available at [`01-bucket-policy.json`](./01-bucket-policy.json).
 
-<img src="./diagrams/Minor-project3.png" alt="Upload Notifier Architecture" width="100%">
+**Before using the policy:** replace `YOUR_BUCKET_NAME`, `YOUR_ACCOUNT_ID`, and `YOUR_DISTRIBUTION_ID` with values from your own AWS environment. The policy is not deployable with those placeholders unchanged. Configure TLS, DNS records, the CloudFront distribution, and S3 content as separate resources.
 
-A zero-latency notification system: any file uploaded to a monitored S3 bucket instantly triggers a formatted email alert via SNS — eliminating manual upload monitoring entirely.
+**Cloud concepts:** private origins, least-privilege resource policies, CDN caching, DNS, and HTTPS delivery.
 
-**[View the full Lambda code →](./03-ImageUploadNotifier.py)**
+## 2. Event-driven text-to-audio
 
-**Three-layer architecture:**
-```
-> Storage Layer      → S3 fires s3:ObjectCreated:* on every upload
-> Compute Layer      → Lambda parses event, formats alert message
-> Messaging Layer    → SNS fans out email delivery to subscribers
-```
+![Text to audio converter architecture](./diagrams/Minor-project2.png)
 
-**Challenges solved:**
-- `InvalidClientTokenId` error from cross-region service mismatch → resolved by aligning all services in `eu-north-1`
-- SNS subscription confirmation blocked by spam filters → resolved via manual token confirmation
+**Goal:** convert an S3 text upload to MP3 audio using Amazon Polly.
 
-**Proof of success:** live email received — *"Bhuvan, a new file has been detected..."* · CloudWatch confirmed successful publish with MessageId tracking
+The handler in [`02-TextToAudioConverter.py`](./02-TextToAudioConverter.py) follows this flow:
 
-<br>
+1. An S3 object-created event identifies the uploaded object.
+2. The handler decodes the URL-encoded key and reads UTF-8 text.
+3. Inputs up to 3,000 characters use synchronous Polly synthesis.
+4. Longer inputs use an asynchronous synthesis task, which writes output to S3.
+5. The response reports the MP3 key for synchronous work, or the task ID and output prefix for asynchronous work.
 
----
+Amazon Polly documents a 3,000 billed-character limit for synchronous synthesis and up to 100,000 billed characters for asynchronous synthesis, subject to service quotas and supported voice/engine settings. See the [official Polly limits](https://docs.aws.amazon.com/polly/latest/dg/limits.html) and [asynchronous synthesis guide](https://docs.aws.amazon.com/polly/latest/dg/asynchronous.html).
 
-## // project 4 — SPARK personal AI assistant (major project)
+**Configuration:** set `OUTPUT_BUCKET` in the Lambda environment. `OUTPUT_PREFIX` is optional; `POLLY_VOICE_ID` defaults to `Joanna`, and `POLLY_ENGINE` defaults to `standard`.
 
-<img src="./diagrams/Major-project.png" alt="SPARK AI Assistant Architecture" width="100%">
+**Important:** Polly asynchronous output is task-based. For long inputs, audio is written under the returned output prefix using a task-generated filename; the handler does not wait until the MP3 is ready.
 
-The capstone project — a conversational AI assistant bridging natural language with real AWS operations. Built on **Amazon Lex V2** for dialogue management, with a central Lambda router dispatching to S3, CloudWatch, DynamoDB, and SNS based on detected intent.
+The internship notes recorded a historical example of a 25.4 KB text file producing a 9.9 MB MP3. This remains a historical observation, not a benchmark rerun against the updated code.
 
-**[View the full Lambda code →](./04-SPARKRouterLambda.py)**
+## 3. Event-driven upload notifier
 
-**Seven intents, seven backend actions:**
+![Upload notifier architecture](./diagrams/Minor-project3.png)
 
-| Intent | Sample Utterance | Backend Action |
+**Goal:** send a notification when an object is created in a monitored S3 bucket.
+
+The handler in [`03-ImageUploadNotifier.py`](./03-ImageUploadNotifier.py):
+
+1. Accepts one or more S3 event records.
+2. Decodes the object key so spaces and encoded characters are handled correctly.
+3. Publishes a concise notification through a configured SNS topic.
+4. Returns SNS message IDs to help with troubleshooting.
+
+Set `SNS_TOPIC_ARN` in the Lambda environment. Configure an S3 event notification, an SNS topic and subscription, and a Lambda execution role that allows publishing to that topic.
+
+**Troubleshooting lessons recorded during the internship:**
+- Check that clients, topic ARNs, and resources use compatible AWS Regions.
+- Confirm the SNS email subscription using its confirmation message.
+- Use CloudWatch logs and SNS message IDs to trace failures.
+
+## 4. SPARK personal AI assistant
+
+![SPARK personal AI assistant architecture](./diagrams/Major-project.png)
+
+**Goal:** connect natural-language intents in Amazon Lex V2 to selected AWS operations through a Lambda router.
+
+The router is in [`04-SPARKRouterLambda.py`](./04-SPARKRouterLambda.py).
+
+| Intent | Example request | Current handler behavior |
 |---|---|---|
-| `WelcomeIntent` | "Hello / Hi SPARK" | Returns system readiness greeting |
-| `CheckS3Status` | "Check bucket my-bucket" | `s3.get_bucket_location()` health probe |
-| `GetSystemLogs` | "Show me the system logs" | `logs.describe_log_streams()` via CloudWatch |
-| `RememberThis` | "Remember that project = SPARK" | `table.put_item()` — DynamoDB write |
-| `RecallMemory` | "What is project?" | `table.get_item()` — DynamoDB read |
-| `SendAlert` | "Send alert: Server is down" | `sns.publish()` to SPARKAlerts topic |
-| `FallbackIntent` | (unrecognised input) | Default fallback message |
+| `WelcomeIntent` | “Hi SPARK” | Returns a greeting |
+| `CheckS3Status` | “Check bucket my-bucket” | Calls `GetBucketLocation` as an access check |
+| `GetSystemLogs` | “Show me the system logs” | Reads recent events from the configured CloudWatch log stream |
+| `RememberThis` | “Remember project = SPARK” | Writes a key/value item to DynamoDB |
+| `RecallMemory` | “What is project?” | Reads a saved DynamoDB item |
+| `SendAlert` | “Send alert: Server is down” | Publishes a message to SNS |
+| `FallbackIntent` | An unrecognised request | Returns a fallback response |
 
-**Logic flow:**
+### SPARK configuration
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `SPARK_MEMORY_TABLE` | DynamoDB table | `SPARKMemory` |
+| `SPARK_LOG_GROUP` | CloudWatch log group | `/aws/lambda/SPARKRouterLambda` |
+| `SPARK_ALERTS_TOPIC_ARN` | SNS topic for alerts | Required for `SendAlert` |
+| `SPARK_DEFAULT_USER_ID` | Fallback key for demo memory | `Bhuvan` |
+| `AWS_REGION` | Region for AWS clients | Lambda region, or `us-east-1` fallback |
+
+SPARK expects Lex V2 session attributes to supply a `userId` when memory should be separated by user. The fallback ID is for a single-user demonstration only; **do not use a caller-controlled session attribute as an identity boundary in a multi-user system**. Derive identity from a trusted authentication layer and apply least-privilege IAM policies.
+
+The handler now returns a generic failure message and marks the Lex intent as `Failed` when an AWS action fails, while logging diagnostic detail to CloudWatch. This avoids returning raw SDK exceptions to the user.
+
+## What I learned
+
+- **Secure by design:** a public website does not require a public S3 bucket when CloudFront OAC is configured correctly.
+- **Use the right processing model:** synchronous Polly synthesis suits short inputs; asynchronous tasks are designed for longer content.
+- **Design for event payloads:** S3 keys arrive URL-encoded, and an event can contain multiple records.
+- **Make failures visible:** CloudWatch logs and service response IDs help troubleshoot event-driven systems.
+- **Separate configuration from code:** buckets, SNS topics, log groups, table names, and regions should be environment-specific.
+- **Treat conversational cloud operations carefully:** validate required slots, use least-privilege IAM, keep diagnostic details out of user-facing errors, and validate AI-assisted actions.
+
+## Technology stack
+
+`Amazon S3` · `AWS Lambda` · `Amazon CloudFront` · `Origin Access Control` · `Route 53` · `Amazon Polly` · `Amazon SNS` · `Amazon Lex V2` · `Amazon DynamoDB` · `Amazon CloudWatch` · `Python` · `boto3`
+
+## Local checks
+
+The repository includes mocked unit tests for key handler behavior. The tests **do not call AWS** and do not prove that deployed resources, event triggers, or IAM policies are correct.
+
+### Set up a local test environment
+
+```bash
+python -m venv .venv
 ```
-> Lex V2 receives input          → invokes SPARKRouterLambda with session JSON
-> Lambda extracts intent + slots → routes to matching AWS service via boto3
-> Response constructed           → dialogAction: Close, intent state: Fulfilled
-> Returned to Lex V2             → displayed to user
+
+**Windows — Command Prompt**
+
+```bat
+.venv\\Scripts\\activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 ```
 
-**Key achievements:**
-- ✅ Bot successfully built — 7 intents, English (US), ready for full testing
-- ✅ Cross-session memory via DynamoDB `SPARKMemory` (On-Demand capacity, Active)
-- ✅ Live SNS email notifications triggered purely via conversation
-- ✅ Lambda metrics: 2 invocations · 318.9ms avg duration · 100% success rate
+**macOS / Linux**
 
-<br>
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
 
----
+GitHub Actions compiles the Python files and runs the unit tests on each relevant push and pull request. No AWS credentials are required for CI.
 
-### // skills exercised
+## Security and deployment notes
 
-`AWS Lambda` `Amazon S3` `CloudFront (OAC)` `Route 53` `Amazon Polly` `Amazon Lex V2` `DynamoDB` `Amazon SNS` `CloudWatch` `IAM Roles & Bucket Policies` `Python 3.12 (boto3 SDK)` `Event-Driven Architecture` `Decoupled Microservices`
+- Never commit AWS access keys or temporary credentials.
+- Use Lambda execution roles instead of embedding credentials.
+- Scope S3, SNS, Polly, DynamoDB, and CloudWatch permissions to the resources each function needs.
+- Keep the audio input bucket and output bucket separate, or carefully filter S3 notifications to prevent recursive triggers.
+- Set each topic ARN, bucket, table, and log group to resources in your own environment.
+- The bucket policy is a template containing placeholders.
+- Test handler behavior and resource permissions in a non-production AWS account before relying on them.
+- This is an internship portfolio project, not a production-ready platform or an infrastructure-as-code deployment.
 
-<br>
+## Project structure
 
-### // outcomes
+```text
+tata-steel-serverless-internship/
+├── 01-bucket-policy.json
+├── 02-TextToAudioConverter.py
+├── 03-ImageUploadNotifier.py
+├── 04-SPARKRouterLambda.py
+├── diagrams/
+│   ├── Minor-project1.png
+│   ├── Minor-project2.png
+│   ├── Minor-project3.png
+│   └── Major-project.png
+├── tests/
+├── requirements.txt
+├── requirements-dev.txt
+├── .github/workflows/python-validation.yml
+└── README.md
+```
 
-- ✅ Four fully deployed, tested serverless projects across distinct AWS problem domains
-- ✅ Hands-on experience with 7+ AWS services in real, working pipelines
-- ✅ Real-world debugging: character limit overflow, cross-region token errors, SNS spam-filter blocking — each diagnosed via CloudWatch and resolved
-- ✅ SPARK demonstrates end-to-end conversational AI wired directly into live cloud infrastructure — not a demo, an operational assistant
+## Internship
 
-<br>
+**Polikey Bhuvan** · B.Tech CSE, Centurion University of Technology & Management
+
+Summer Internship at **Tata Steel — SNTI, Jamshedpur** · June 2025  
+Mentor: **Prem Chand Kodem**
+
+[Portfolio](https://polikey-bhuvan.onrender.com) · [LinkedIn](https://linkedin.com/in/polikeybhuvan) · [GitHub](https://github.com/polikeybhuvan)
 
 ---
 
 <div align="center">
 
-**Polikey Bhuvan** — B.Tech CSE, Centurion University of Technology & Management
-Summer Internship @ Tata Steel, SNTI Jamshedpur · Mentor: Prem Chand Kodem
+**Learning cloud architecture by building, debugging, and connecting AWS services.**
 
-[Portfolio](https://polikey-bhuvan.onrender.com) · [LinkedIn](https://linkedin.com/in/polikeybhuvan) · [GitHub](https://github.com/polikeybhuvan)
+[View repository](https://github.com/polikeybhuvan/tata-steel-serverless-internship) · [Read internship report](https://drive.google.com/file/d/1hZjngzBuRiI6bFhFzB0viwR1xHfcIrKo/view?usp=sharing)
 
-</div>4
+</div>
